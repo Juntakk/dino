@@ -16,10 +16,6 @@ class PlayScene extends Phaser.Scene {
     super("PlayScene");
   }
 
-  preload() {
-    this.load.image("ground", "assets/ground.png");
-    this.load.image("dino-idle", "assets/dino-idle-2.png");
-  }
   create() {
     this.createEnvironment();
     this.createPlayer();
@@ -40,6 +36,7 @@ class PlayScene extends Phaser.Scene {
         delay: 1000 / 60,
         loop: true,
         callback: () => {
+          this.player.playRunAnimation();
           this.player.setVelocityX(80);
           this.ground.width += 17 * 2;
           if (this.ground.width >= this.gameWidth) {
