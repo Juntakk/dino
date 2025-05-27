@@ -20,13 +20,14 @@ class PlayScene extends GameScene {
   }
 
   create() {
-    this.obstacles = this.physics.add.group();
-
     this.createEnvironment();
     this.createPlayer();
-    this.handleGameOver();
-    this.handleStartGame();
+    this.createObstacles();
+    this.createGameOverContainer();
+
+    this.handleGameStart();
     this.handleObstacleCollision();
+    this.handleRestartGame();
   }
 
   update(time: number, delta: number): void {
@@ -53,6 +54,10 @@ class PlayScene extends GameScene {
     Phaser.Actions.IncX(this.obstacles.getChildren(), -this.gameSpeed);
 
     this.ground.tilePositionX += this.gameSpeed;
+  }
+
+  createObstacles() {
+    this.obstacles = this.physics.add.group();
   }
 
   createPlayer() {
@@ -90,7 +95,21 @@ class PlayScene extends GameScene {
     });
   }
 
-  handleStartGame() {
+  handleRestartGame() {
+    this.restartText.on("pointerdown", () => {
+      this.obstacles.clear(true, true);
+
+      this.physics.resume();
+      this.player.setVelocityX(0);
+
+      this.anims.resumeAll();
+      this.gameOverContainer.setAlpha(0);
+
+      this.isGameRunning = true;
+    });
+  }
+
+  handleGameStart() {
     this.startTrigger = this.physics.add
       .sprite(0, 10, null)
       .setOrigin(0, 1)
@@ -121,17 +140,13 @@ class PlayScene extends GameScene {
     });
   }
 
-  handleGameOver() {
+  createGameOverContainer() {
     this.gameOverText = this.add.image(0, 0, "game-over");
     this.restartText = this.add.image(0, 80, "restart").setInteractive();
     this.gameOverContainer = this.add
       .container(this.gameWidth / 2, this.gameHeight / 2 - 50)
       .add([this.gameOverText, this.restartText])
       .setAlpha(0);
-
-    this.restartText.on("pointerdown", () => {
-      this.scene.start("PlayScene");
-    });
   }
 }
 
