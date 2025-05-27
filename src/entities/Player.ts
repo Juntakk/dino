@@ -61,4 +61,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   playRunAnimation() {
     this.play("dino-run", true);
   }
+
+  die() {
+    this.anims.stop();
+    this.setTexture("dino-hurt");
+  }
 }
