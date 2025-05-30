@@ -10,7 +10,7 @@ class PlayScene extends GameScene {
   spawnInterval: number = 1500;
   spawnTime: number = 0;
   obstacles: Phaser.Physics.Arcade.Group;
-  gameSpeed: number = 5;
+  gameSpeed: number = 8;
   gameOverText: Phaser.GameObjects.Image;
   restartText: Phaser.GameObjects.Image;
   gameOverContainer: Phaser.GameObjects.Container;
@@ -71,14 +71,28 @@ class PlayScene extends GameScene {
   }
 
   spawnObstacle() {
-    const obstacleNum =
-      Math.floor(Math.random() * PRELOAD_CONFIG.cactusesCount) + 1;
+    const obstaclesCount =
+      PRELOAD_CONFIG.cactusesCount + PRELOAD_CONFIG.birdCount;
+    const obstacleNum = Math.floor(Math.random() * obstaclesCount) + 1;
+
     const distance = Phaser.Math.Between(800, 1000);
 
-    this.obstacles
-      .create(distance, this.gameHeight, `obstacle-${obstacleNum}`)
-      .setOrigin(0, 1)
-      .setImmovable(true);
+    if (obstacleNum > PRELOAD_CONFIG.cactusesCount) {
+      const enemyPossibleHeight = [20, 70];
+      const enemyHeight =
+        enemyPossibleHeight[
+          Math.floor(Math.random() * enemyPossibleHeight.length)
+        ];
+      this.obstacles
+        .create(distance, this.gameHeight - enemyHeight, "enemy-bird")
+        .setOrigin(0, 1)
+        .setImmovable(true);
+    } else {
+      this.obstacles
+        .create(distance, this.gameHeight, `obstacle-${obstacleNum}`)
+        .setOrigin(0, 1)
+        .setImmovable(true);
+    }
   }
 
   handleObstacleCollision() {
