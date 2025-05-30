@@ -3,6 +3,8 @@ import GameScene from "../scenes/GameScene";
 export class Player extends Phaser.Physics.Arcade.Sprite {
   cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   scene: GameScene;
+  jumpSound: Phaser.Sound.HTML5AudioSound;
+
   constructor(scene: GameScene, x: number, y: number) {
     super(scene, x, y, "dino-run");
 
@@ -20,9 +22,14 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setOrigin(0, 1)
       .setGravityY(5000)
       .setCollideWorldBounds(true)
-      .setBodySize(44, 92);
+      .setBodySize(44, 92)
+      .setDepth(1);
 
     this.createAnimations();
+
+    this.jumpSound = this.scene.sound.add("jump", {
+      volume: 0.75,
+    }) as Phaser.Sound.HTML5AudioSound;
   }
 
   update() {
@@ -34,8 +41,9 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     const isOnFloor = (this.body as Phaser.Physics.Arcade.Body).onFloor();
 
-    if (space.isDown && isSpaceJustDown && isOnFloor) {
+    if (isSpaceJustDown && isOnFloor) {
       this.setVelocityY(-1600);
+      this.jumpSound.play();
     }
 
     if (isDownJustDown && isOnFloor) {

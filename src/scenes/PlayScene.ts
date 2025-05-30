@@ -7,13 +7,27 @@ class PlayScene extends GameScene {
   player: Player;
   ground: Phaser.GameObjects.TileSprite;
   startTrigger: SpriteWithDynamicBody;
+
   spawnInterval: number = 1500;
   spawnTime: number = 0;
+
   obstacles: Phaser.Physics.Arcade.Group;
-  gameSpeed: number = 8;
+  clouds: Phaser.GameObjects.Group;
+
+  gameSpeed: number = 10;
+  gameSpeedModifier: number = 1;
+
   gameOverText: Phaser.GameObjects.Image;
   restartText: Phaser.GameObjects.Image;
   gameOverContainer: Phaser.GameObjects.Container;
+
+  scoreText: Phaser.GameObjects.Text;
+  highScoreText: Phaser.GameObjects.Text;
+  score: number = 0;
+  scoreInterval: number = 100;
+  scoreDeltaTime: number = 0;
+
+  progressSound: Phaser.Sound.HTML5AudioSound;
 
   constructor() {
     super("PlayScene");
@@ -24,10 +38,16 @@ class PlayScene extends GameScene {
     this.createPlayer();
     this.createObstacles();
     this.createGameOverContainer();
+    this.createAnimations();
+    this.createScore();
 
     this.handleGameStart();
     this.handleObstacleCollision();
     this.handleRestartGame();
+
+    this.progressSound = this.sound.add("progress", {
+      volume: 0.33,
+    }) as Phaser.Sound.HTML5AudioSound;
   }
 
   update(time: number, delta: number): void {
@@ -40,20 +60,60 @@ class PlayScene extends GameScene {
     }
 
     this.spawnTime += delta;
+    this.scoreDeltaTime += delta;
+
+    if (this.scoreDeltaTime >= this.scoreInterval) {
+      this.score++;
+
+      if (this.score % 100 === 0) {
+        this.gameSpeedModifier += 0.1;
+
+        this.progressSound.play();
+
+        this.tweens.add({
+          targets: this.scoreText,
+          duration: 100,
+          repeat: 5,
+          alpha: 0,
+          yoyo: true,
+        });
+      }
+
+      this.scoreDeltaTime = 0;
+    }
 
     if (this.spawnTime > this.spawnInterval) {
       this.spawnTime = 0;
       this.spawnObstacle();
     }
+
+    Phaser.Actions.IncX(
+      this.obstacles.getChildren(),
+      -this.gameSpeed * this.gameSpeedModifier
+    );
+    Phaser.Actions.IncX(this.clouds.getChildren(), -0.5);
+
+    const score = Array.from(String(this.score), Number);
+
+    for (let i = 0; i < 5 - String(this.score).length; i++) {
+      score.unshift(0);
+    }
+
+    this.scoreText.setText(score.join(""));
+
     this.obstacles.getChildren().forEach((obstacle: SpriteWithDynamicBody) => {
       if (obstacle.getBounds().right < 0) {
         this.obstacles.remove(obstacle);
       }
     });
 
-    Phaser.Actions.IncX(this.obstacles.getChildren(), -this.gameSpeed);
+    this.clouds.getChildren().forEach((cloud: SpriteWithDynamicBody) => {
+      if (cloud.getBounds().right < 0) {
+        cloud.x = this.gameWidth + 30;
+      }
+    });
 
-    this.ground.tilePositionX += this.gameSpeed;
+    this.ground.tilePositionX += this.gameSpeed * this.gameSpeedModifier;
   }
 
   createObstacles() {
@@ -68,6 +128,45 @@ class PlayScene extends GameScene {
     this.ground = this.add
       .tileSprite(0, this.gameHeight, 88, 26, "ground")
       .setOrigin(0, 1);
+
+    this.clouds = this.add.group();
+
+    this.clouds = this.clouds.addMultiple([
+      this.add.image(this.gameWidth / 2, 170, "cloud"),
+      this.add.image(this.gameWidth - 80, 80, "cloud"),
+      this.add.image(this.gameWidth / 1.3, 100, "cloud"),
+    ]);
+
+    this.clouds.setAlpha(0);
+  }
+
+  createScore() {
+    this.scoreText = this.add
+      .text(this.gameWidth, 0, "00000", {
+        fontSize: 30,
+        fontFamily: "Arial",
+        color: "#535353",
+      })
+      .setOrigin(1, 0)
+      .setAlpha(0);
+
+    this.highScoreText = this.add
+      .text(this.scoreText.getBounds().left - 20, 0, "00000", {
+        fontSize: 30,
+        fontFamily: "Arial",
+        color: "#535353",
+      })
+      .setOrigin(1, 0)
+      .setAlpha(0);
+  }
+
+  createAnimations() {
+    this.anims.create({
+      key: "enemy-bird-fly",
+      frames: this.anims.generateFrameNumbers("enemy-bird"),
+      frameRate: 6,
+      repeat: -1,
+    });
   }
 
   spawnObstacle() {
@@ -75,7 +174,7 @@ class PlayScene extends GameScene {
       PRELOAD_CONFIG.cactusesCount + PRELOAD_CONFIG.birdCount;
     const obstacleNum = Math.floor(Math.random() * obstaclesCount) + 1;
 
-    const distance = Phaser.Math.Between(800, 1000);
+    const distance = Phaser.Math.Between(150, 300);
 
     if (obstacleNum > PRELOAD_CONFIG.cactusesCount) {
       const enemyPossibleHeight = [20, 70];
@@ -84,12 +183,21 @@ class PlayScene extends GameScene {
           Math.floor(Math.random() * enemyPossibleHeight.length)
         ];
       this.obstacles
-        .create(distance, this.gameHeight - enemyHeight, "enemy-bird")
+        .create(
+          this.gameWidth + distance,
+          this.gameHeight - enemyHeight,
+          "enemy-bird"
+        )
+        .play("enemy-bird-fly")
         .setOrigin(0, 1)
         .setImmovable(true);
     } else {
       this.obstacles
-        .create(distance, this.gameHeight, `obstacle-${obstacleNum}`)
+        .create(
+          this.gameWidth + distance,
+          this.gameHeight,
+          `obstacle-${obstacleNum}`
+        )
         .setOrigin(0, 1)
         .setImmovable(true);
     }
@@ -99,13 +207,26 @@ class PlayScene extends GameScene {
     this.physics.add.collider(this.player, this.obstacles, () => {
       this.physics.pause();
       this.isGameRunning = false;
+      this.anims.pauseAll();
 
       this.player.die();
 
       this.spawnTime = 0;
-      this.gameSpeed = 5;
+      this.score = 0;
+      this.scoreDeltaTime = 0;
+      this.gameSpeedModifier = 1;
 
       this.gameOverContainer.setAlpha(1);
+
+      const newHighScore = this.highScoreText.text.substring(
+        this.highScoreText.text.length - 5
+      );
+      const newScore =
+        Number(this.scoreText.text) > Number(newHighScore)
+          ? this.scoreText.text
+          : newHighScore;
+      this.highScoreText.setText("HI " + newScore);
+      this.highScoreText.setAlpha(1);
     });
   }
 
@@ -118,6 +239,7 @@ class PlayScene extends GameScene {
 
       this.anims.resumeAll();
       this.gameOverContainer.setAlpha(0);
+      this.highScoreText.setAlpha(0);
 
       this.isGameRunning = true;
     });
@@ -143,10 +265,13 @@ class PlayScene extends GameScene {
           this.player.playRunAnimation();
           this.player.setVelocityX(80);
           this.ground.width += 17 * 2;
+
           if (this.ground.width >= this.gameWidth) {
             rollOutEvent.remove();
             this.ground.width = this.gameWidth;
             this.player.setVelocityX(0);
+            this.clouds.setAlpha(1);
+            this.scoreText.setAlpha(1);
             this.isGameRunning = true;
           }
         },
