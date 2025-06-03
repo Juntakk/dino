@@ -8,7 +8,7 @@ class PlayScene extends GameScene {
   ground: Phaser.GameObjects.TileSprite;
   startTrigger: SpriteWithDynamicBody;
 
-  spawnInterval: number = 1500;
+  spawnInterval: number = 1850;
   spawnTime: number = 0;
 
   obstacles: Phaser.Physics.Arcade.Group;
@@ -66,7 +66,7 @@ class PlayScene extends GameScene {
       this.score++;
 
       if (this.score % 100 === 0) {
-        this.gameSpeedModifier += 0.1;
+        this.gameSpeedModifier += 0.075;
 
         this.progressSound.play();
 
@@ -200,6 +200,24 @@ class PlayScene extends GameScene {
         )
         .setOrigin(0, 1)
         .setImmovable(true);
+
+      const sizes: Record<number, [number, number]> = {
+        1: [30, 65],
+        2: [60, 65],
+        3: [95, 65],
+        4: [45, 90],
+        5: [95, 90],
+        6: [140, 90],
+      };
+
+      const obstacles = this.obstacles.getChildren();
+
+      for (let i = 0; i < obstacles.length; i++) {
+        const obstacle = obstacles[i] as SpriteWithDynamicBody;
+        const size = sizes[obstacleNum];
+
+        obstacle.body.setSize(...size);
+      }
     }
   }
 
@@ -247,9 +265,10 @@ class PlayScene extends GameScene {
 
   handleGameStart() {
     this.startTrigger = this.physics.add
-      .sprite(0, 10, null)
+      .sprite(0, 300, null)
       .setOrigin(0, 1)
       .setAlpha(0);
+
     this.physics.add.overlap(this.player, this.startTrigger, () => {
       if (this.startTrigger.y === 10) {
         this.startTrigger.body.reset(0, this.gameHeight);
