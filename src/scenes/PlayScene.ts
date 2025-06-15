@@ -14,11 +14,12 @@ class PlayScene extends GameScene {
   obstacles: Phaser.Physics.Arcade.Group;
   clouds: Phaser.GameObjects.Group;
 
-  gameSpeed: number = 10;
+  gameSpeed: number = 3;
   gameSpeedModifier: number = 1;
 
   gameOverText: Phaser.GameObjects.Image;
   restartText: Phaser.GameObjects.Image;
+  startText: Phaser.GameObjects.Text;
   gameOverContainer: Phaser.GameObjects.Container;
 
   scoreText: Phaser.GameObjects.Text;
@@ -150,6 +151,15 @@ class PlayScene extends GameScene {
       .setOrigin(1, 0)
       .setAlpha(0);
 
+    this.startText = this.add
+      .text(this.gameWidth / 2, this.gameHeight / 2, "Press SPACE to start", {
+        fontSize: 30,
+        fontFamily: "Arial",
+        color: "#535353",
+      })
+      .setOrigin(0.5, 0.5)
+      .setAlpha(1);
+
     this.highScoreText = this.add
       .text(this.scoreText.getBounds().left - 20, 0, "00000", {
         fontSize: 30,
@@ -268,7 +278,6 @@ class PlayScene extends GameScene {
       .sprite(0, 300, null)
       .setOrigin(0, 1)
       .setAlpha(0);
-
     this.physics.add.overlap(this.player, this.startTrigger, () => {
       if (this.startTrigger.y === 10) {
         this.startTrigger.body.reset(0, this.gameHeight);
@@ -291,6 +300,7 @@ class PlayScene extends GameScene {
             this.player.setVelocityX(0);
             this.clouds.setAlpha(1);
             this.scoreText.setAlpha(1);
+            this.startText.setAlpha(0);
             this.isGameRunning = true;
           }
         },
