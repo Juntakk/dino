@@ -40,7 +40,7 @@ class PlayScene extends GameScene {
     this.createObstacles();
     this.createGameOverContainer();
     this.createAnimations();
-    this.createScore();
+    this.createTexts();
 
     this.handleGameStart();
     this.handleObstacleCollision();
@@ -141,7 +141,7 @@ class PlayScene extends GameScene {
     this.clouds.setAlpha(0);
   }
 
-  createScore() {
+  createTexts() {
     this.scoreText = this.add
       .text(this.gameWidth, 0, "00000", {
         fontSize: 30,
@@ -152,11 +152,16 @@ class PlayScene extends GameScene {
       .setAlpha(0);
 
     this.startText = this.add
-      .text(this.gameWidth / 2, this.gameHeight / 2, "Press SPACE to start", {
-        fontSize: 30,
-        fontFamily: "Arial",
-        color: "#535353",
-      })
+      .text(
+        this.gameWidth / 2,
+        this.gameHeight / 2,
+        "Press SPACE to start \n\n         ↓   to duck",
+        {
+          fontSize: 30,
+          fontFamily: "Arial",
+          color: "#535353",
+        }
+      )
       .setOrigin(0.5, 0.5)
       .setAlpha(1);
 
